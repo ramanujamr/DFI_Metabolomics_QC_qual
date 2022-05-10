@@ -28,8 +28,8 @@ zero_threshold=1000
 
 # 1. set up directory and files ########################################################################################
 
-#wddir <- "/Volumes/chaubard-lab/shiny_workspace/csvs/"
-wddir <- "/Users/ramanujam/GitHub/dfimmfshiny_test/test_files"
+wddir <- "/Volumes/chaubard-lab/shiny_workspace/csvs/"
+#wddir <- "/Users/ramanujam/GitHub/dfimmfshiny_test/test_files"
 
 
 # 2. FUNCTIONS #########################################################################################################
@@ -105,5 +105,5 @@ Function_readin_csv_2 <- function(filename, zero_threshold, recursive=F){
 
 source('ui.R', local=TRUE)
 source('server.R', local=TRUE)
-shinyApp(ui=ui, server=server)
-#runApp(list(ui=ui, server=server), host="0.0.0.0",port=1000)
+#shinyApp(ui=ui, server=server)
+runApp(list(ui=ui, server=server), host="0.0.0.0",port=1000)
