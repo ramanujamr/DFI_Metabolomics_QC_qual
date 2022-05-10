@@ -92,7 +92,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$Button_generate_boxplots, ignoreInit = T, ignoreNULL = T, {
 
-    # Table for conc/dil selection (rHandsontable)
+    # Table for conc/dil selection and grouping compounds (rHandsontable)
     output$Table_compounds_settings <- renderRHandsontable({
       if (!is.null(rvalues$df_compounds))
         rhandsontable(rvalues$df_compounds, rowHeaders = NULL,overflow = 'visible') %>%
@@ -124,6 +124,8 @@ server <- function(input, output, session) {
     })
 
 
+    # Boxplots
+    
     output$Plot_boxplots <- renderPlot({
       
       rvalues$plot_boxplots <- rvalues$df_input %>%
@@ -149,7 +151,16 @@ server <- function(input, output, session) {
   # 3. HEATMAP #########################################################################################################
  
   observeEvent(input$Button_generate_heatmap, ignoreInit = T, ignoreNULL = T, {
-
+    
+    saveRDS(hot_to_r(input$Table_compounds_settings), "Table_compounds_settings.rds")
+    saveRDS(hot_to_r(input$Table_samples_settings), "Table_samples_settings.rds")
+    
+    Table_samples_settings <- readRDS("Table_samples_settings.rds")
+    Table_compounds_settings <- readRDS("Table_compounds_settings.rds")
+    
+    
+    
+    
     ## 3.1 Get concentration selection information from Table_compounds_settings =======================================
     compounds_dil <- hot_to_r(input$Table_compounds_settings) %>%
       filter(conc=="diluted") %>%
@@ -186,7 +197,8 @@ server <- function(input, output, session) {
         filter(is.na(itsd)) %>%
         inner_join(rvalues$df_conc_type, by=c("compound_name", "conc")) %>%
         left_join(rvalues$df_itsd_stats, by=c("sampleid", "letter")) %>%
-        mutate(norm_peak = peakarea / avg)
+        mutate(norm_peak = peakarea / avg) %>% 
+        mutate(norm_peak = ifelse(is.na(norm_peak), 0, norm_peak))
       
     } else {
       
@@ -213,7 +225,8 @@ server <- function(input, output, session) {
              !grepl("CC[0-9]+", sampleid)) %>%
       mutate(heat_val = ifelse(is.infinite(heat_val), 0, heat_val)) %>%
       left_join(hot_to_r(input$Table_compounds_settings), by=c("compound_name","conc")) %>%
-      left_join(hot_to_r(input$Table_samples_settings), by="sampleid")
+      left_join(hot_to_r(input$Table_samples_settings), by="sampleid") %>% 
+      mutate(heat_val = ifelse(is.na(heat_val), 0, heat_val))
     
     df_column_split <- df_heatmap %>% 
       select(sampleid, group_samples) %>% 
@@ -281,38 +294,49 @@ server <- function(input, output, session) {
   
   # 4. SAVE RESULTS ####################################################################################################
   
+
   # Save normalized csv
-  observeEvent(input$Button_download_normalized_csv, ignoreInit = T, ignoreNULL = T, {
+  output$Button_download_normalized_csv <- downloadHandler(
     
-    rvalues$df_normalized %>% 
-      select(sampleid, compound_name, norm_peak) %>% 
-      mutate(sampleid = ifelse(grepl("MB|Pooled|Plasma|CC|Standard", sampleid, ignore.case = T),
-                               sampleid,
-                               gsub("^[0-9]{3}_", "", sampleid))) %>% 
-      pivot_wider(names_from = compound_name, values_from = norm_peak, values_fill = NA) %>% 
-      write.csv(paste0("~/Downloads/normalized_results_",
-                       gsub("\\.csv","",input$filename),"_",
-                       gsub("\\-","",Sys.Date()),".csv"), row.names=F,quote=F)
+    filename = function(){
+      paste0("normalized_results_",
+             gsub("\\.csv","",input$filename),"_",
+             gsub("\\-","",Sys.Date()),".csv")
+    },
     
-    shinyalert(title = "File saved to ~/Downloads", type = "success")
-  })
+    content = function(file) {
+      
+      rvalues$df_normalized %>% 
+        select(sampleid, compound_name, norm_peak) %>% 
+        mutate(sampleid = ifelse(grepl("MB|Pooled|Plasma|CC|Standard", sampleid, ignore.case = T),
+                                 sampleid,
+                                 gsub("^[0-9]{3}_", "", sampleid))) %>% 
+        pivot_wider(names_from = compound_name, values_from = norm_peak, values_fill = NA) %>% 
+        write.csv(file=file, row.names=F,quote=F)
+    })
+  
   
 
+  
   # Save normalized csv (no QCs)
-  observeEvent(input$Button_download_normalized_csv_no_qc, ignoreInit = T, ignoreNULL = T, {
+  output$Button_download_normalized_csv_no_qc <- downloadHandler(
     
-    rvalues$df_normalized %>% 
-      select(sampleid, compound_name, norm_peak) %>% 
-      filter(!grepl("MB|Pooled|Plasma|CC|Standard",sampleid, ignore.case = T)) %>% 
-      mutate(sampleid = gsub("^[0-9]{3}_", "", sampleid)) %>% 
-      pivot_wider(names_from = compound_name, values_from = norm_peak, values_fill = NA) %>% 
-      write.csv(paste0("~/Downloads/removed_qcs_normalized_results_",
-                       gsub("\\.csv","",input$filename),"_",
-                       gsub("\\-","",Sys.Date()),".csv"), row.names=F,quote=F)
+    filename = function(){
+      paste0("removed_qcs_normalized_results_",
+             gsub("\\.csv","",input$filename),"_",
+             gsub("\\-","",Sys.Date()),".csv")
+    },
     
-    shinyalert(title = "File saved to ~/Downloads", type = "success")
-    
-  })
+    content = function(file) {
+      
+      rvalues$df_normalized %>% 
+        select(sampleid, compound_name, norm_peak) %>% 
+        filter(!grepl("MB|Pooled|Plasma|CC|Standard",sampleid, ignore.case = T)) %>% 
+        mutate(sampleid = gsub("^[0-9]{3}_", "", sampleid)) %>% 
+        pivot_wider(names_from = compound_name, values_from = norm_peak, values_fill = NA) %>% 
+        write.csv(file=file, row.names = F, quote=F)
+    })
+  
   
   
   # Download heatmap pdf

@@ -59,9 +59,9 @@ ui <- fluidPage(shinytheme("journal"),
                 fluidRow(
                   column(width=3, align="center", 
                          fluidRow(
-                           shiny::actionButton("Button_download_normalized_csv", "Normalized Table", icon("file-csv"), width="200px",
+                           shiny::downloadButton("Button_download_normalized_csv", "Normalized Table", icon("file-csv"), width="200px",
                                                style="color: #fff; background-color: #00ab66; border-color: #2e6da4"),
-                           shiny::actionButton("Button_download_normalized_csv_no_qc", "Normalized Table (No QC)", icon("file-csv"), width="200px",
+                           shiny::downloadButton("Button_download_normalized_csv_no_qc", "Normalized Table (No QC)", icon("file-csv"), width="200px",
                                                style="color: #fff; background-color: #00ab66; border-color: #2e6da4")
                          )),
                   
