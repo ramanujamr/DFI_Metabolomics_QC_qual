@@ -154,6 +154,12 @@ server <- function(input, output, session) {
   observeEvent(input$Button_generate_heatmap, ignoreInit = T, ignoreNULL = T, {
 
     
+    #saveRDS(hot_to_r(input$Table_compounds_settings),"Table_compounds_settings.rds")
+    #saveRDS(hot_to_r(input$Table_samples_settings),"Table_samples_settings.rds")
+    
+    #Table_compounds_settings <- readRDS("Table_compounds_settings.rds")
+    #Table_samples_settings <- readRDS("Table_samples_settings.rds")
+    
     ## 3.1 Get concentration selection information from Table_compounds_settings =======================================
     compounds_dil <- hot_to_r(input$Table_compounds_settings) %>%
       filter(conc=="diluted") %>%
@@ -205,7 +211,8 @@ server <- function(input, output, session) {
     rvalues$df_MB_mean <- rvalues$df_normalized %>%
       filter(grepl("MB",sampleid)) %>% 
       group_by(compound_name) %>% 
-      summarize(mean_mb = mean(norm_peak))
+      summarize(mean_mb = mean(norm_peak)) %>% 
+      mutate(mean_mb = ifelse(is.na(mean_mb), 0, mean_mb))
  
     # Subtract mean MB if checkbox is selected
     rvalues$df_normalized <- rvalues$df_normalized %>%
@@ -215,7 +222,14 @@ server <- function(input, output, session) {
       rowwise() %>%
       mutate(norm_peak = ifelse(input$Checkbox_subtract_MB==T, norm_peak - mean_mb, norm_peak)) %>%
       mutate(norm_peak = ifelse(norm_peak<0, 0, norm_peak))
-    
+
+    # temp <- df_normalized %>%
+    #   mutate(norm_peak = ifelse(is.na(norm_peak), 0, norm_peak)) %>% 
+    #   mutate(norm_peak = ifelse(is.infinite(norm_peak), 0, norm_peak)) %>% 
+    #   left_join(df_MB_mean, by="compound_name") %>%
+    #   rowwise() %>%
+    #   mutate(norm_peak = ifelse(input$Checkbox_subtract_MB==T, norm_peak - mean_mb, norm_peak)) %>%
+    #   mutate(norm_peak = ifelse(norm_peak<0, 0, norm_peak))
     
 
     ## 3.3 Heatmap dataframe ===========================================================================================
@@ -288,7 +302,7 @@ server <- function(input, output, session) {
 
       draw(rvalues$plot_ht, heatmap_legend_side = "top")
 
-    })
+    }, height=nrow(rvalues$df_compounds)*14.5)
 
 
 

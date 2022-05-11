@@ -57,7 +57,7 @@ ui <- fluidPage(shinytheme("journal"),
                     checkboxInput("Checkbox_cluster_samples","Cluster Samples"),
                     br(),
                     h4("log2 fold-change of median-normalized peak areas for each compound"),
-                    column(width=12, plotOutput("Plot_heatmap", height="1100px"))
+                    column(width=12, plotOutput("Plot_heatmap", height="auto"))
                   ),
                 
                 br(), br(),
