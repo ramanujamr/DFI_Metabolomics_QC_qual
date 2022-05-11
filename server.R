@@ -1,7 +1,8 @@
 
 server <- function(input, output, session) {
   
-  rvalues <- reactiveValues(df_input=NULL, df_compounds=NULL, plot_boxplots=NULL, compounds_list=NULL, plot_ht=NULL)
+  rvalues <- reactiveValues(df_input=NULL, df_compounds=NULL, df_heatmap=NULL, mat_normalized=NULL,
+                            plot_boxplots=NULL, compounds_list=NULL, plot_ht=NULL)
   
   shinyjs::hide("Button_generate_boxplots")
   shinyjs::hide("Button_generate_heatmap")
@@ -151,15 +152,7 @@ server <- function(input, output, session) {
   # 3. HEATMAP #########################################################################################################
  
   observeEvent(input$Button_generate_heatmap, ignoreInit = T, ignoreNULL = T, {
-    
-    saveRDS(hot_to_r(input$Table_compounds_settings), "Table_compounds_settings.rds")
-    saveRDS(hot_to_r(input$Table_samples_settings), "Table_samples_settings.rds")
-    
-    Table_samples_settings <- readRDS("Table_samples_settings.rds")
-    Table_compounds_settings <- readRDS("Table_compounds_settings.rds")
-    
-    
-    
+
     
     ## 3.1 Get concentration selection information from Table_compounds_settings =======================================
     compounds_dil <- hot_to_r(input$Table_compounds_settings) %>%
@@ -190,7 +183,6 @@ server <- function(input, output, session) {
 
     ## 3.2 Normalized dataframe ========================================================================================
 
-    
     if (rvalues$panel == "BileAcids") {
       
       rvalues$df_normalized <- rvalues$df_input %>%
@@ -208,12 +200,27 @@ server <- function(input, output, session) {
         left_join(rvalues$df_itsd_stats, by="sampleid") %>%
         mutate(norm_peak = peakarea / avg)
     }
+    
+    # Method blanks mean dataframe
+    rvalues$df_MB_mean <- rvalues$df_normalized %>%
+      filter(grepl("MB",sampleid)) %>% 
+      group_by(compound_name) %>% 
+      summarize(mean_mb = mean(norm_peak))
  
-
+    # Subtract mean MB if checkbox is selected
+    rvalues$df_normalized <- rvalues$df_normalized %>%
+      mutate(norm_peak = ifelse(is.na(norm_peak), 0, norm_peak)) %>% 
+      mutate(norm_peak = ifelse(is.infinite(norm_peak), 0, norm_peak)) %>% 
+      left_join(rvalues$df_MB_mean, by="compound_name") %>%
+      rowwise() %>%
+      mutate(norm_peak = ifelse(input$Checkbox_subtract_MB==T, norm_peak - mean_mb, norm_peak)) %>%
+      mutate(norm_peak = ifelse(norm_peak<0, 0, norm_peak))
+    
+    
 
     ## 3.3 Heatmap dataframe ===========================================================================================
 
-    df_heatmap <- rvalues$df_normalized %>%
+    rvalues$df_heatmap <- rvalues$df_normalized %>%
       group_by(compound_name) %>%
       mutate(compound_med = median(norm_peak)) %>%
       ungroup() %>%
@@ -228,18 +235,18 @@ server <- function(input, output, session) {
       left_join(hot_to_r(input$Table_samples_settings), by="sampleid") %>% 
       mutate(heat_val = ifelse(is.na(heat_val), 0, heat_val))
     
-    df_column_split <- df_heatmap %>% 
+    df_column_split <- rvalues$df_heatmap %>% 
       select(sampleid, group_samples) %>% 
       distinct()
     
-    df_row_split <- df_heatmap %>% 
+    df_row_split <- rvalues$df_heatmap %>% 
       select(compound_name, group_compounds) %>% 
       distinct()
     
 
     ## 3.4 Plot heatmap ================================================================================================
 
-    rvalues$mat_normalized <- df_heatmap %>%
+    rvalues$mat_normalized <- rvalues$df_heatmap %>%
       mutate(heat_val = ifelse(peakarea<zero_threshold, 0, heat_val)) %>%
       select(sampleid, compound_name, heat_val) %>%
       pivot_wider(names_from = compound_name, values_from = heat_val, values_fill = NA) %>%
@@ -247,8 +254,8 @@ server <- function(input, output, session) {
       janitor::remove_empty(which = "cols") %>%
       t()
 
-    hm_min <- min(df_heatmap$heat_val)
-    hm_max <- max(df_heatmap$heat_val)
+    hm_min <- min(rvalues$df_heatmap$heat_val)
+    hm_max <- max(rvalues$df_heatmap$heat_val)
     hm_lim <- max(c((-1*hm_min),hm_max))
 
     color_min <- ceiling((hm_min - 1))

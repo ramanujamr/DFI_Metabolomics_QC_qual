@@ -18,7 +18,7 @@ ui <- fluidPage(shinytheme("journal"),
                   
                   fluidRow(
                     br(), br(),
-                    column(width=3, align="center", offset=1,
+                    column(width=3, align="center", offset=9,
                          shiny::actionButton("Button_generate_boxplots", "Generate Boxplots", icon("chart-bar"), width="200px",
                                              style="color: #fff; background-color: #2346b0; border-color: #2e6da4"))
                     )
@@ -28,16 +28,22 @@ ui <- fluidPage(shinytheme("journal"),
                   fluidRow(
                     h3("2. RAW DATA"),
                     br(),
-                    column(width=12, align="center", plotOutput("Plot_boxplots", height="auto")),
-                    br(), br(),
-                    column(width=6, rHandsontableOutput("Table_compounds_settings")),
-                    column(width=4, offset=2, rHandsontableOutput("Table_samples_settings"))
-
+                    column(width=12, align="center", plotOutput("Plot_boxplots", height="auto"))
+                  ),
+                
+                br(), br(),
+                
+                fluidRow(
+                  
+                  br(),
+                  column(width=6, h4("Compounds settings"), rHandsontableOutput("Table_compounds_settings")),
+                  column(width=4, offset=1, h4("Samples settings"), rHandsontableOutput("Table_samples_settings"))
                   ),
                 
                 br(),
                   
                 fluidRow(column(width=3, offset=9, align="center", 
+                                checkboxInput("Checkbox_subtract_MB","Subtract Method Blanks", value=T),
                                 shiny::actionButton("Button_generate_heatmap", "Generate Heatmap", icon("chart-bar"), width="200px",
                                                     style="color: #fff; background-color: #2346b0; border-color: #2e6da4"))
                 ),
@@ -47,8 +53,8 @@ ui <- fluidPage(shinytheme("journal"),
                   fluidRow(
                     h3("2. HEATMAP (NORMALIZED)"),
                     br(),
-                    checkboxInput("Checkbox_cluster_compounds","Cluster compounds"),
-                    checkboxInput("Checkbox_cluster_samples","Cluster samples"),
+                    checkboxInput("Checkbox_cluster_compounds","Cluster Compounds"),
+                    checkboxInput("Checkbox_cluster_samples","Cluster Samples"),
                     br(),
                     h4("log2 fold-change of median-normalized peak areas for each compound"),
                     column(width=12, plotOutput("Plot_heatmap", height="1100px"))
@@ -68,11 +74,9 @@ ui <- fluidPage(shinytheme("journal"),
                   column(width=3, align="center", shiny::downloadButton("Button_download_heatmap", "Heatmap",
                                                                         icon("file-pdf"), width="200px",
                                                                         style="color: #fff; background-color: #00ab66; border-color: #2e6da4"))
-                )
+                ),
                 
-                
-                
-                
-                
+                br(), br()
+
 )
 
