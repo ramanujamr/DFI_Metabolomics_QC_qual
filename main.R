@@ -8,6 +8,7 @@ library(shinyBS)
 library(tidyverse)
 library(reshape2)
 library(DT)
+library(cluster)
 
 library(broom)
 library(ggsci)

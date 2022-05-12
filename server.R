@@ -51,7 +51,9 @@ server <- function(input, output, session) {
         filter(itsd=="ITSD") %>%
         group_by(sampleid, letter) %>%
         summarize(avg = mean(peakarea),
-                  med = median(peakarea))
+                  med = median(peakarea)) %>% 
+        filter(avg>=1000) %>%
+        filter(med>=1000) 
     } else {  # For non bile acids panel
       
       rvalues$df_itsd_stats <- rvalues$df_input %>%
@@ -154,12 +156,6 @@ server <- function(input, output, session) {
   observeEvent(input$Button_generate_heatmap, ignoreInit = T, ignoreNULL = T, {
 
     
-    #saveRDS(hot_to_r(input$Table_compounds_settings),"Table_compounds_settings.rds")
-    #saveRDS(hot_to_r(input$Table_samples_settings),"Table_samples_settings.rds")
-    
-    #Table_compounds_settings <- readRDS("Table_compounds_settings.rds")
-    #Table_samples_settings <- readRDS("Table_samples_settings.rds")
-    
     ## 3.1 Get concentration selection information from Table_compounds_settings =======================================
     compounds_dil <- hot_to_r(input$Table_compounds_settings) %>%
       filter(conc=="diluted") %>%
@@ -194,17 +190,19 @@ server <- function(input, output, session) {
       rvalues$df_normalized <- rvalues$df_input %>%
         filter(is.na(itsd)) %>%
         inner_join(rvalues$df_conc_type, by=c("compound_name", "conc")) %>%
-        left_join(rvalues$df_itsd_stats, by=c("sampleid", "letter")) %>%
+        inner_join(rvalues$df_itsd_stats, by=c("sampleid", "letter")) %>%
         mutate(norm_peak = peakarea / avg) %>% 
-        mutate(norm_peak = ifelse(is.na(norm_peak), 0, norm_peak))
+        mutate(norm_peak = ifelse(peakarea < zero_threshold, NA, norm_peak))
       
     } else {
       
       rvalues$df_normalized <- rvalues$df_input %>%
         filter(is.na(itsd)) %>%
         inner_join(rvalues$df_conc_type, by=c("compound_name", "conc")) %>%
-        left_join(rvalues$df_itsd_stats, by="sampleid") %>%
-        mutate(norm_peak = peakarea / avg)
+        inner_join(rvalues$df_itsd_stats, by="sampleid") %>%
+        mutate(norm_peak = peakarea / avg) %>% 
+        mutate(norm_peak = ifelse(peakarea < zero_threshold, NA, norm_peak)) %>% 
+        mutate(norm_peak = ifelse(is.infinite(norm_peak), 0, norm_peak))
     }
     
     # Method blanks mean dataframe
@@ -216,100 +214,87 @@ server <- function(input, output, session) {
  
     # Subtract mean MB if checkbox is selected
     rvalues$df_normalized <- rvalues$df_normalized %>%
-      mutate(norm_peak = ifelse(is.na(norm_peak), 0, norm_peak)) %>% 
-      mutate(norm_peak = ifelse(is.infinite(norm_peak), 0, norm_peak)) %>% 
       left_join(rvalues$df_MB_mean, by="compound_name") %>%
       rowwise() %>%
-      mutate(norm_peak = ifelse(input$Checkbox_subtract_MB==T, norm_peak - mean_mb, norm_peak)) %>%
-      mutate(norm_peak = ifelse(norm_peak<0, 0, norm_peak))
+      mutate(norm_peak = ifelse(input$Checkbox_subtract_MB==T, max(norm_peak-mean_mb,0), norm_peak))
 
-    # temp <- df_normalized %>%
-    #   mutate(norm_peak = ifelse(is.na(norm_peak), 0, norm_peak)) %>% 
-    #   mutate(norm_peak = ifelse(is.infinite(norm_peak), 0, norm_peak)) %>% 
-    #   left_join(df_MB_mean, by="compound_name") %>%
-    #   rowwise() %>%
-    #   mutate(norm_peak = ifelse(input$Checkbox_subtract_MB==T, norm_peak - mean_mb, norm_peak)) %>%
-    #   mutate(norm_peak = ifelse(norm_peak<0, 0, norm_peak))
-    
 
     ## 3.3 Heatmap dataframe ===========================================================================================
 
     rvalues$df_heatmap <- rvalues$df_normalized %>%
+      filter(!grepl("MB|Pooled|Plasma|Standard|CC|Spiked",sampleid, ignore.case = T)) %>% 
       group_by(compound_name) %>%
-      mutate(compound_med = median(norm_peak)) %>%
+      mutate(compound_med = median(norm_peak, na.rm=T)) %>%
       ungroup() %>%
-      mutate(heat_val = log((norm_peak / (compound_med +1))+1, base = 2)) %>%
-      filter(!grepl("MB",sampleid, ignore.case = T),
-             !grepl("Pooled",sampleid, ignore.case = T),
-             !grepl("Plasma",sampleid, ignore.case = T),
-             !grepl("Standard",sampleid, ignore.case = T),
-             !grepl("CC[0-9]+", sampleid)) %>%
-      mutate(heat_val = ifelse(is.infinite(heat_val), 0, heat_val)) %>%
+      mutate(heat_val = log((norm_peak / compound_med), base = 2)) %>% 
       left_join(hot_to_r(input$Table_compounds_settings), by=c("compound_name","conc")) %>%
-      left_join(hot_to_r(input$Table_samples_settings), by="sampleid") %>% 
-      mutate(heat_val = ifelse(is.na(heat_val), 0, heat_val))
-    
-    df_column_split <- rvalues$df_heatmap %>% 
-      select(sampleid, group_samples) %>% 
-      distinct()
-    
-    df_row_split <- rvalues$df_heatmap %>% 
-      select(compound_name, group_compounds) %>% 
-      distinct()
+      left_join(hot_to_r(input$Table_samples_settings), by="sampleid") 
     
 
     ## 3.4 Plot heatmap ================================================================================================
 
     rvalues$mat_normalized <- rvalues$df_heatmap %>%
-      mutate(heat_val = ifelse(peakarea<zero_threshold, 0, heat_val)) %>%
       select(sampleid, compound_name, heat_val) %>%
       pivot_wider(names_from = compound_name, values_from = heat_val, values_fill = NA) %>%
       column_to_rownames(var = "sampleid") %>%
-      janitor::remove_empty(which = "cols") %>%
       t()
 
-    hm_min <- min(rvalues$df_heatmap$heat_val)
-    hm_max <- max(rvalues$df_heatmap$heat_val)
+    # Get compounds with all NAs
+    rvalues$nd_compounds <- rvalues$mat_normalized[rowSums(is.na(rvalues$mat_normalized)) == ncol(rvalues$mat_normalized), ]
+    rvalues$nd_compounds <- rownames(rvalues$nd_compounds) %>% as.data.frame()
+    colnames(rvalues$nd_compounds) <- c("ND_compounds")
+    
+    # Filter ND compounds (across all samples)
+    rvalues$mat_normalized <- rvalues$mat_normalized[rowSums(is.na(rvalues$mat_normalized)) != ncol(rvalues$mat_normalized), ]
+
+    # Replace NA with a very high number
+    mat_normalized_na_removed <- rvalues$mat_normalized 
+    mat_normalized_na_removed[is.na(mat_normalized_na_removed)] <- 99999
+
+    df_column_split <- rvalues$df_heatmap %>% 
+      filter(compound_name %in% rownames(mat_normalized_na_removed)) %>% 
+      select(sampleid, group_samples) %>% 
+      distinct()
+    
+    df_row_split <- rvalues$df_heatmap %>% 
+      filter(compound_name %in% rownames(mat_normalized_na_removed)) %>%
+      select(compound_name, group_compounds) %>% 
+      distinct()
+    
+    hm_min <- min(rvalues$df_heatmap$heat_val, na.rm=T)
+    hm_max <- max(rvalues$df_heatmap$heat_val, na.rm=T)
     hm_lim <- max(c((-1*hm_min),hm_max))
 
     color_min <- ceiling((hm_min - 1))
     color_max <- ceiling(hm_max)
     color_lim <- ceiling(hm_lim)
 
-    col_fun1 <- colorRamp2(c(-hm_lim, 0, hm_lim), c("blue", "white", "red"))
+    col_fun1 <- colorRamp2(c(-hm_lim, 0, hm_lim, 99999), c("blue", "white", "red", "grey"))
 
     output$Plot_heatmap <- renderPlot({
 
-      rvalues$plot_ht <- Heatmap(as.matrix(rvalues$mat_normalized), col = col_fun1, width = unit(30, "cm"),
-                    row_names_max_width = unit(8, "cm"),
-                    heatmap_legend_param = list(title = 'Log2FoldChange', title_position = 'topcenter', direction="horizontal",
-                                                legend_height = unit(6, "cm"),
-                                                at = c(-color_lim,(ceiling(color_lim - color_lim/2) * -1),
-                                                       0,
-                                                       (ceiling(color_lim - color_lim /2)), color_lim)),
-
-                    row_split = df_row_split$group_compounds,
-                    column_split = df_column_split$group_samples,
-                    row_names_side = c("left"),
-                    row_gap = unit(5, 'mm'),
-                    border_gp = gpar(col = "black", lty = 1),
-                    rect_gp = gpar(col = "black", lwd = 0.2),
-                    row_dend_width = unit(10, "cm"),
-                    column_dend_height = unit(4, "cm"),
-                    cluster_rows = input$Checkbox_cluster_samples,
-                    cluster_columns = input$Checkbox_cluster_compounds,
-                    show_heatmap_legend = TRUE)
+      rvalues$plot_ht <- Heatmap(as.matrix(mat_normalized_na_removed), col = col_fun1, width = unit(30, "cm"), height=nrow(rvalues$mat_normalized)*14.5,
+                                 row_names_max_width = unit(8, "cm"),
+                                 heatmap_legend_param = list(title = 'Log2FoldChange', title_position = 'topcenter', direction="horizontal",
+                                                             at = c(-color_lim,(ceiling(color_lim - color_lim/2) * -1),
+                                                                    0, (ceiling(color_lim - color_lim /2)), color_lim)),
+                                  row_names_side = c("left"),
+                                  row_gap = unit(5, 'mm'),
+                                  border_gp = gpar(col = "black", lty = 1),
+                                  rect_gp = gpar(col = "black", lwd = 0.2),
+                                  row_dend_width = unit(10, "cm"),
+                                  column_dend_height = unit(4, "cm"),
+                                  row_split = df_row_split$group_compounds,
+                                  column_split = df_column_split$group_samples,
+                                  cluster_rows = input$Checkbox_cluster_samples,
+                                  cluster_columns = input$Checkbox_cluster_compounds,
+                                  show_heatmap_legend = TRUE)
 
       draw(rvalues$plot_ht, heatmap_legend_side = "top")
 
-    }, height=nrow(rvalues$df_compounds)*14.5)
+    }, height=nrow(rvalues$mat_normalized)*14.5)
 
-
-
-    # Get compounds that are not detected in any of the samples
-    nd_compounds <- rvalues$compounds_list[ !(rvalues$compounds_list %in% colnames(rvalues$mat_normalized)) ]
-
-
+ 
   })
   
   
@@ -329,7 +314,7 @@ server <- function(input, output, session) {
       
       rvalues$df_normalized %>% 
         select(sampleid, compound_name, norm_peak) %>% 
-        mutate(sampleid = ifelse(grepl("MB|Pooled|Plasma|CC|Standard", sampleid, ignore.case = T),
+        mutate(sampleid = ifelse(grepl("MB|Pooled|Plasma|CC|Standard|Spiked", sampleid, ignore.case = T),
                                  sampleid,
                                  gsub("^[0-9]{3}_", "", sampleid))) %>% 
         pivot_wider(names_from = compound_name, values_from = norm_peak, values_fill = NA) %>% 
@@ -352,7 +337,7 @@ server <- function(input, output, session) {
       
       rvalues$df_normalized %>% 
         select(sampleid, compound_name, norm_peak) %>% 
-        filter(!grepl("MB|Pooled|Plasma|CC|Standard",sampleid, ignore.case = T)) %>% 
+        filter(!grepl("MB|Pooled|Plasma|CC|Standard|Spiked",sampleid, ignore.case = T)) %>% 
         mutate(sampleid = gsub("^[0-9]{3}_", "", sampleid)) %>% 
         pivot_wider(names_from = compound_name, values_from = norm_peak, values_fill = NA) %>% 
         write.csv(file=file, row.names = F, quote=F)
@@ -368,10 +353,24 @@ server <- function(input, output, session) {
     },
     
     content = function(file) {
-      pdf(file, height = nrow(rvalues$mat_normalized)/2, width = ncol(rvalues$mat_normalized)/2)
+      pdf(file, height = nrow(rvalues$mat_normalized)/2, width = max(ncol(rvalues$mat_normalized)/2, 20))
       draw(rvalues$plot_ht, heatmap_legend_side = "top")
+      plot.new()
+      print( gridExtra::grid.arrange(gridExtra::tableGrob(rvalues$nd_compounds, rows = NULL)) )
       dev.off()
     })
+  
+
+  
+  
+  # pdf("test.pdf", height = nrow(mat_normalized)/2, width = max(ncol(mat_normalized)/2, 20))
+  # draw(plot_ht, heatmap_legend_side = "top")
+  # plot.new()
+  # print( gridExtra::grid.arrange(gridExtra::tableGrob(nd_compounds, rows = NULL)) )
+  # dev.off()
+  
+  
+  
   
   
   
