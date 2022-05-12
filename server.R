@@ -51,9 +51,7 @@ server <- function(input, output, session) {
         filter(itsd=="ITSD") %>%
         group_by(sampleid, letter) %>%
         summarize(avg = mean(peakarea),
-                  med = median(peakarea)) %>% 
-        filter(avg>=1000) %>%
-        filter(med>=1000) 
+                  med = median(peakarea))
     } else {  # For non bile acids panel
       
       rvalues$df_itsd_stats <- rvalues$df_input %>%
@@ -65,6 +63,8 @@ server <- function(input, output, session) {
 
     
     ## 1.3 Input for rhandsontable (concentration selection & grouping) ================================================
+
+    compounds_categories <- c("1","2","3","4","5", bile_categories) 
     
     rvalues$df_compounds <- rvalues$df_input %>% 
       filter(is.na(itsd)) %>%
@@ -77,11 +77,11 @@ server <- function(input, output, session) {
       distinct() %>% 
       mutate(conc = factor(conc, levels = sort(unique(conc)))) %>% 
       ungroup() %>% 
-      mutate(group_compounds = factor(1, levels = c("1","2","3","4","5"), ordered = TRUE))
+      mutate(group_compounds = factor(1, levels = compounds_categories, ordered = TRUE))
     
     
     ## 1.4 List of compounds ===========================================================================================
-    rvalues$compounds_list <- rvalues$df_compounds %>% 
+    compounds_list <- df_compounds %>% 
       distinct(compound_name) %>%
       `$`(compound_name)
     
@@ -155,6 +155,12 @@ server <- function(input, output, session) {
  
   observeEvent(input$Button_generate_heatmap, ignoreInit = T, ignoreNULL = T, {
 
+    # saveRDS(hot_to_r(input$Table_compounds_settings), "Table_compounds_settings.rds")
+    # saveRDS(hot_to_r(input$Table_samples_settings), "Table_samples_settings.rds")
+    # 
+    # Table_compounds_settings <- readRDS("Table_compounds_settings.rds")
+    # Table_samples_settings <- readRDS("Table_samples_settings.rds")
+    
     
     ## 3.1 Get concentration selection information from Table_compounds_settings =======================================
     compounds_dil <- hot_to_r(input$Table_compounds_settings) %>%
@@ -192,8 +198,8 @@ server <- function(input, output, session) {
         inner_join(rvalues$df_conc_type, by=c("compound_name", "conc")) %>%
         inner_join(rvalues$df_itsd_stats, by=c("sampleid", "letter")) %>%
         mutate(norm_peak = peakarea / avg) %>% 
-        mutate(norm_peak = ifelse(peakarea < zero_threshold, NA, norm_peak))
-      
+        mutate(norm_peak = ifelse(peakarea < zero_threshold, NA, norm_peak)) %>% 
+        mutate(norm_peak = ifelse(is.infinite(norm_peak), 0, norm_peak))
     } else {
       
       rvalues$df_normalized <- rvalues$df_input %>%
@@ -216,7 +222,14 @@ server <- function(input, output, session) {
     rvalues$df_normalized <- rvalues$df_normalized %>%
       left_join(rvalues$df_MB_mean, by="compound_name") %>%
       rowwise() %>%
-      mutate(norm_peak = ifelse(input$Checkbox_subtract_MB==T, max(norm_peak-mean_mb,0), norm_peak))
+      mutate(norm_peak = ifelse(input$Checkbox_subtract_MB==T, max(norm_peak-mean_mb,0), norm_peak)) %>% 
+      mutate(norm_peak = ifelse(norm_peak==0, NA, norm_peak))
+    
+    # df_normalized <- df_normalized %>%
+    #   left_join(df_MB_mean, by="compound_name") %>%
+    #   rowwise() %>%
+    #   mutate(norm_peak = (max(norm_peak-mean_mb,0))) %>% 
+    #   mutate(norm_peak = ifelse(norm_peak==0, NA, norm_peak))
 
 
     ## 3.3 Heatmap dataframe ===========================================================================================
@@ -242,7 +255,7 @@ server <- function(input, output, session) {
     # Get compounds with all NAs
     rvalues$nd_compounds <- rvalues$mat_normalized[rowSums(is.na(rvalues$mat_normalized)) == ncol(rvalues$mat_normalized), ]
     rvalues$nd_compounds <- rownames(rvalues$nd_compounds) %>% as.data.frame()
-    colnames(rvalues$nd_compounds) <- c("ND_compounds")
+    if(nrow(nd_compounds)!=0) {colnames(rvalues$nd_compounds) <- c("ND_compounds")}
     
     # Filter ND compounds (across all samples)
     rvalues$mat_normalized <- rvalues$mat_normalized[rowSums(is.na(rvalues$mat_normalized)) != ncol(rvalues$mat_normalized), ]
@@ -278,17 +291,18 @@ server <- function(input, output, session) {
                                  heatmap_legend_param = list(title = 'Log2FoldChange', title_position = 'topcenter', direction="horizontal",
                                                              at = c(-color_lim,(ceiling(color_lim - color_lim/2) * -1),
                                                                     0, (ceiling(color_lim - color_lim /2)), color_lim)),
-                                  row_names_side = c("left"),
-                                  row_gap = unit(5, 'mm'),
-                                  border_gp = gpar(col = "black", lty = 1),
-                                  rect_gp = gpar(col = "black", lwd = 0.2),
-                                  row_dend_width = unit(10, "cm"),
-                                  column_dend_height = unit(4, "cm"),
-                                  row_split = df_row_split$group_compounds,
-                                  column_split = df_column_split$group_samples,
-                                  cluster_rows = input$Checkbox_cluster_samples,
-                                  cluster_columns = input$Checkbox_cluster_compounds,
-                                  show_heatmap_legend = TRUE)
+                                 row_names_side = c("left"),
+                                 row_gap = unit(5, 'mm'),
+                                 border_gp = gpar(col = "black", lty = 1),
+                                 rect_gp = gpar(col = "black", lwd = 0.2),
+                                 row_dend_side = "right",
+                                 row_dend_width = unit(10, "cm"),
+                                 column_dend_height = unit(4, "cm"),
+                                 row_split = df_row_split$group_compounds,
+                                 column_split = df_column_split$group_samples,
+                                 cluster_rows = input$Checkbox_cluster_compounds,
+                                 cluster_columns = input$Checkbox_cluster_samples,
+                                 show_heatmap_legend = TRUE)
 
       draw(rvalues$plot_ht, heatmap_legend_side = "top")
 
@@ -361,17 +375,10 @@ server <- function(input, output, session) {
     })
   
 
-  
-  
   # pdf("test.pdf", height = nrow(mat_normalized)/2, width = max(ncol(mat_normalized)/2, 20))
   # draw(plot_ht, heatmap_legend_side = "top")
   # plot.new()
   # print( gridExtra::grid.arrange(gridExtra::tableGrob(nd_compounds, rows = NULL)) )
   # dev.off()
-  
-  
-  
-  
-  
-  
+
 }
