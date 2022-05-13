@@ -81,7 +81,7 @@ server <- function(input, output, session) {
     
     
     ## 1.4 List of compounds ===========================================================================================
-    compounds_list <- df_compounds %>% 
+    compounds_list <- rvalues$df_compounds %>% 
       distinct(compound_name) %>%
       `$`(compound_name)
     
