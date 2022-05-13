@@ -255,7 +255,7 @@ server <- function(input, output, session) {
     # Get compounds with all NAs
     rvalues$nd_compounds <- rvalues$mat_normalized[rowSums(is.na(rvalues$mat_normalized)) == ncol(rvalues$mat_normalized), ]
     rvalues$nd_compounds <- rownames(rvalues$nd_compounds) %>% as.data.frame()
-    if(nrow(nd_compounds)!=0) {colnames(rvalues$nd_compounds) <- c("ND_compounds")}
+    if(nrow(rvalues$nd_compounds)!=0) {colnames(rvalues$nd_compounds) <- c("ND_compounds")}
     
     # Filter ND compounds (across all samples)
     rvalues$mat_normalized <- rvalues$mat_normalized[rowSums(is.na(rvalues$mat_normalized)) != ncol(rvalues$mat_normalized), ]
