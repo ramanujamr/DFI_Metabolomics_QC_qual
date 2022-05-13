@@ -89,6 +89,7 @@ Function_readin_csv_2 <- function(filename, zero_threshold, recursive=F){
     mutate(itsd = str_extract(compound_name, pattern="ITSD"),
            compound_name = tolower(gsub("\\_ITSD","",compound_name))) %>% 
     separate(sampleid, into=c("inj_num","date_run","batch","sampleid","conc"),sep="\\_\\_") %>% 
+    mutate(sampleid = paste0(inj_num, "_", sampleid)) %>% 
     select(sampleid, date_run, batch, compound_name, itsd, conc, peakarea=value) %>% 
     mutate(conc = ifelse(grepl("dil",conc),"diluted","concentrated"),
            peakarea = ifelse(peakarea <= zero_threshold, 0, peakarea),

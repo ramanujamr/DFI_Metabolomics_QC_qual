@@ -232,6 +232,9 @@ server <- function(input, output, session) {
     #   mutate(norm_peak = ifelse(norm_peak==0, NA, norm_peak))
 
 
+    # saveRDS(rvalues$df_normalized, "df_normalized.rds")
+    # df_normalized = readRDS("df_normalized.rds")
+    
     ## 3.3 Heatmap dataframe ===========================================================================================
 
     rvalues$df_heatmap <- rvalues$df_normalized %>%
@@ -336,7 +339,15 @@ server <- function(input, output, session) {
     })
   
   
-
+# 
+#   temp <- df_normalized %>% 
+#     select(sampleid, compound_name, norm_peak) %>% 
+#     mutate(sampleid = ifelse(grepl("MB|Pooled|Plasma|CC|Standard|Spiked", sampleid, ignore.case = T),
+#                              sampleid,
+#                              gsub("^[0-9]{3}_", "", sampleid))) %>% 
+#     pivot_wider(names_from = compound_name, values_from = norm_peak, values_fill = NA)
+  
+  
   
   # Save normalized csv (no QCs)
   output$Button_download_normalized_csv_no_qc <- downloadHandler(
