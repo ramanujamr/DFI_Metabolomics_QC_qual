@@ -57,6 +57,7 @@ ui <- fluidPage(shinytheme("journal"),
                     checkboxInput("Checkbox_cluster_samples","Cluster Samples"),
                     br(),
                     h4("log2 fold-change of median-normalized peak areas for each compound"),
+                    h4("Grey indicates samples with raw peak area below standard detection level."),
                     column(width=12, plotOutput("Plot_heatmap", height="auto"))
                   ),
                 

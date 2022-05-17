@@ -61,7 +61,8 @@ Function_readin_csv_1 <- function(filename, zero_threshold, recursive=F)
            peakarea = as.numeric(peakarea),
            peakarea = ifelse(peakarea <= zero_threshold, 0, peakarea),
            cc = str_extract(sampleid, pattern=".*CC.*"),
-           cc = sub(".*_", "", cc))
+           cc = sub(".*_", "", cc)) %>% 
+    mutate(compound_name = gsub(",", "_", compound_name))
   
   return(df_input)
 }
@@ -94,7 +95,8 @@ Function_readin_csv_2 <- function(filename, zero_threshold, recursive=F){
     mutate(conc = ifelse(grepl("dil",conc),"diluted","concentrated"),
            peakarea = ifelse(peakarea <= zero_threshold, 0, peakarea),
            cc = str_extract(sampleid, pattern=".*CC.*"),
-           cc = sub(".*_", "", cc))
+           cc = sub(".*_", "", cc)) %>% 
+    mutate(compound_name = gsub(",", "_", compound_name))
     
   return(df_input)
 }

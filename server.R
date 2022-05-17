@@ -225,6 +225,13 @@ server <- function(input, output, session) {
       mutate(norm_peak = ifelse(norm_peak==0, NA, norm_peak))
     
     
+    # df_normalized <- df_normalized %>%
+    #   left_join(df_MB_mean, by="compound_name") %>%
+    #   rowwise() %>%
+    #   mutate(norm_peak = max(norm_peak-mean_mb,0)) %>% 
+    #   mutate(norm_peak = ifelse(norm_peak==0, NA, norm_peak))
+    
+    
     ## 3.3 Heatmap dataframe ===========================================================================================
 
     rvalues$df_heatmap <- rvalues$df_normalized %>%
@@ -304,23 +311,23 @@ server <- function(input, output, session) {
                                  show_heatmap_legend = TRUE)
       
 
-      rvalues$plot_ht
+      draw(rvalues$plot_ht, heatmap_legend_side="top")
       
       
-      lgd1 = Legend(col_fun = col_fun1, title = 'Log2FoldChange',
-                    title_position = 'topcenter',
-                    legend_height = unit(6, "cm"),
-                    at = c(-color_lim, 0, color_lim))
-
-      lgd2 = Legend(title = "Not Detected", labels = "", at = 1:1, legend_gp = gpar(fill = 8:9), title_position = c("topcenter"))
-
-      pd = packLegend(lgd1, lgd2, direction = "horizontal", column_gap = unit(20, "mm"))
-      pushViewport(viewport(width = 1, height = 1))
-      grid.rect(gp = gpar(col = "white"))
-
-      draw(pd, x = unit(0.9, "npc"), y = unit(0.9, "npc"), just = c("right", "top"))
-
-      popViewport()
+      # lgd1 = Legend(col_fun = col_fun1, title = 'Log2FoldChange',
+      #               title_position = 'topcenter',
+      #               legend_height = unit(6, "cm"),
+      #               at = c(-color_lim, 0, color_lim))
+      # 
+      # lgd2 = Legend(title = "Not Detected", labels = "", at = 1:1, legend_gp = gpar(fill = 8:9), title_position = c("topcenter"))
+      # 
+      # pd = packLegend(lgd1, lgd2, direction = "horizontal", column_gap = unit(20, "mm"))
+      # pushViewport(viewport(width = 1, height = 1))
+      # grid.rect(gp = gpar(col = "white"))
+      # 
+      # draw(pd, x = unit(0.9, "npc"), y = unit(0.9, "npc"), just = c("right", "top"))
+      # 
+      # popViewport()
       
       
       
