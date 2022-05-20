@@ -9,7 +9,9 @@ server <- function(input, output, session) {
   
   # Refresh csv files list
   observeEvent(input$Button_refresh_csv, ignoreInit = T, ignoreNULL = T, {
-    updateSelectInput(session, 'filename', choices = rev(list.files(wddir, pattern = "csv$")))
+    updateSelectInput(session, 'filename', choices = rev(list.files(wddir, 
+                                                                    pattern = ".*bile.*csv|.*PFBBr.*csv|.*Indole.*csv|.*Tryptophan.*csv", 
+                                                                    ignore.case = T)))
   })
   
   

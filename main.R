@@ -31,7 +31,7 @@ bile_categories <- c("Primary", "Secondary", "Primary Conjugated", "Secondary Co
 # 1. set up directory and files ########################################################################################
 
 wddir <- "/Volumes/chaubard-lab/shiny_workspace/csvs/"
-#wddir <- "/Users/ramanujam/GitHub/dfimmfshiny_test/test_files"
+#wddir <- "/Users/ramanujam/GitHub/test_files"
 
 
 # 2. FUNCTIONS #########################################################################################################
@@ -100,9 +100,6 @@ Function_readin_csv_2 <- function(filename, zero_threshold, recursive=F){
     
   return(df_input)
 }
-
-
-
 
 
 
