@@ -2,7 +2,7 @@
 
 ui <- fluidPage(shinytheme("journal"),
                 useShinyjs(),
-                titlePanel("DFI Metabolomics QC - Qual"),
+                titlePanel("DFI Metabolomics QC - Qual V2"),
                 
                 fluidRow(
                   h3("1. UPLOAD DATA"),
@@ -16,7 +16,13 @@ ui <- fluidPage(shinytheme("journal"),
                          actionButton("Button_upload_csv", "Upload", icon("upload"), width="100px",
                                       style="color: #fff; background-color: #2346b0; border-color: #2e6da4"),
                          textOutput("Textout_filename"),
-                         textOutput("Textout_panel")),
+                         textOutput("Textout_panel"),
+                         actionButton("Button_new_file", "Upload New File", icon("upload"), width="150px",
+                                      style="color: #fff; background-color: #2346b0; border-color: #2e6da4")),
+                  column(width=3, offset=1,
+                         br(),
+                         fluidRow(actionButton("Button_itsd_stats", "ITSD stats", icon("tv"), width="150px")),
+                         bsModal("Modal_ITSD_stats", "ITSD stats", "Button_itsd_stats", size = "large", DT::dataTableOutput("Table_ITSD_stats"))),
                   
                   fluidRow(
                     br(), br(),
@@ -75,6 +81,10 @@ ui <- fluidPage(shinytheme("journal"),
                          )),
                   
                   column(width=3, align="center", shiny::downloadButton("Button_download_heatmap", "Heatmap",
+                                                                        icon("file-pdf"), width="200px",
+                                                                        style="color: #fff; background-color: #00ab66; border-color: #2e6da4")),
+                  
+                  column(width=3, align="center", shiny::downloadButton("Button_download_qc_report", "QC Report",
                                                                         icon("file-pdf"), width="200px",
                                                                         style="color: #fff; background-color: #00ab66; border-color: #2e6da4"))
                 ),

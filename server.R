@@ -1,3 +1,4 @@
+# Server - qual
 
 server <- function(input, output, session) {
   
@@ -6,6 +7,8 @@ server <- function(input, output, session) {
   
   shinyjs::hide("Button_generate_boxplots")
   shinyjs::hide("Button_generate_heatmap")
+  shinyjs::hide("Button_new_file")
+  shinyjs::hide("Button_itsd_stats")
   
   # Refresh csv files list
   observeEvent(input$Button_refresh_csv, ignoreInit = T, ignoreNULL = T, {
@@ -15,10 +18,23 @@ server <- function(input, output, session) {
   })
   
   
+  ## 1.2 Upload new file ===============================================================================================
+  observeEvent(input$Button_new_file, ignoreInit = T, ignoreNULL = T, {
+    session$reload()
+  })
+  
+  
   # 1. INPUT DATA ######################################################################################################
   
   observeEvent(input$Button_upload_csv, ignoreInit = T, ignoreNULL = T, {
     
+    
+    shinyjs::hide("filename")
+    shinyjs::hide("Button_refresh_csv")
+    shinyjs::hide("Button_upload_csv")
+    
+    shinyjs::show("Button_new_file")
+    shinyjs::show("Button_itsd_stats")
     shinyjs::show("Button_generate_boxplots")
     shinyjs::show("Button_generate_heatmap")
     
@@ -40,28 +56,30 @@ server <- function(input, output, session) {
     
     # Read and clean input data
     if (rvalues$panel == "BileAcids") {
-    rvalues$df_input <- Function_readin_csv_1(filename, zero_threshold) 
+    rvalues$df_input <- Function_readin_csv_1(filename, zero_threshold)
     } else {
-      rvalues$df_input <- Function_readin_csv_2(filename, zero_threshold) 
+      rvalues$df_input <- Function_readin_csv_2(filename, zero_threshold)
     }
   
     
-    ## 1.2 Average and median of ITSD (PANEL SPECIFIC)  ================================================================
+    ## 1.2 Average and median of ITSD (by sampleid for normalization)  =================================================
     
     if (rvalues$panel == "BileAcids") { # For bile acids panel
-      rvalues$df_itsd_stats <- rvalues$df_input %>%
+      rvalues$df_itsd_samples <- rvalues$df_input %>%
         filter(itsd=="ITSD") %>%
         group_by(sampleid, letter) %>%
         summarize(avg = mean(peakarea),
                   med = median(peakarea))
     } else {  # For non bile acids panel
       
-      rvalues$df_itsd_stats <- rvalues$df_input %>%
+      rvalues$df_itsd_samples <- rvalues$df_input %>%
         filter(itsd=="ITSD") %>%
         group_by(sampleid) %>%
         summarize(avg = mean(peakarea),
                   med = median(peakarea))
     }
+
+    
 
     
     ## 1.3 Input for rhandsontable (concentration selection & grouping) ================================================
@@ -81,12 +99,76 @@ server <- function(input, output, session) {
       ungroup() %>% 
       mutate(group_compounds = factor(1, levels = compounds_categories, ordered = TRUE))
     
+    if(rvalues$panel=="PFBBr") {
+      rvalues$df_compounds <- rvalues$df_compounds %>% 
+      mutate(conc = "concentrated")
+    }
+    
+    if(rvalues$panel=="BileAcids") {
+      rvalues$df_compounds <- rvalues$df_compounds %>% 
+        select(-group_compounds) %>% 
+        left_join(bile_acids_groups, by="compound_name") %>% 
+        mutate(group_compounds = replace_na(group_compounds, "1")) %>% 
+        mutate(group_compounds = factor(group_compounds, levels=compounds_categories, ordered = T))
+        
+    }
+    
+    
     
     ## 1.4 List of compounds ===========================================================================================
     compounds_list <- rvalues$df_compounds %>% 
       distinct(compound_name) %>%
       `$`(compound_name)
     
+    
+    
+    
+    ## 1.2 ITSD Stat by compound (for QC)  =============================================================================
+    
+    
+    rvalues$df_itsd_stats <- rvalues$df_input %>%
+      filter(itsd=="ITSD") %>%
+      filter(!grepl("MB|Pooled|Plasma|CC|Standard",sampleid, ignore.case = T)) %>% 
+      mutate(peakarea = ifelse(peakarea <= zero_threshold, 0, peakarea)) %>% 
+      group_by(batch, compound_name) %>%
+      summarise(stdev = sd(peakarea),
+                average = mean(peakarea),
+                middle = median(peakarea),
+                cv = stdev / average,
+                cv_med = stdev / median(peakarea)) # Don't turn into % here since it will be applied in the y-axis scale
+    
+    rvalues$df_itsd <- rvalues$df_input %>% 
+      filter(itsd == "ITSD") %>% 
+      filter(!grepl("MB|Pooled|Plasma|Standard|Spiked",sampleid, ignore.case = T)) %>% 
+      mutate(peakarea = ifelse(peakarea <= zero_threshold, 0, peakarea),
+             num = str_extract(sampleid, "[0-9][0-9][0-9]"),
+             num = as.numeric(num),
+             cc_shape = ifelse(grepl("CC[0-9]+", sampleid), "CC Sample", "ITSD")) %>% 
+      left_join(rvalues$df_itsd_stats) %>% 
+      mutate(num = as.numeric(num),
+             flag = ifelse(peakarea > average + (1.5 * stdev) | peakarea < average - (1.5 * stdev), 
+                           paste(num,batch,sampleid, sep = "_"), NA))
+
+    
+  })
+  
+  # ITSD stats (bsModal)
+  output$Table_ITSD_stats <- DT::renderDataTable({
+    rvalues$df_itsd_stats %>% 
+      dplyr::rename(Batch = batch,
+                    `Internal Standard` = compound_name,
+                    StDev = stdev,
+                    Mean = average,
+                    Median = middle,
+                    CV = cv,
+                    `CV Median` = cv_med) %>%
+      mutate(StDev = round(StDev, digits = 0),
+             Mean = round(Mean, digits = 0),
+             Median = round(Median, digits = 0),
+             `CV (%)` = round(CV * 100, digits = 1),
+             `CV Median (%)` = round(`CV Median` * 100, digits = 1)) %>%
+      select(Batch,`Internal Standard`,StDev,Mean,Median,`CV (%)`,`CV Median (%)`) %>% 
+      datatable(options = list(columnDefs = list(list(className='dt-center', targets="_all"))))
     
   })
     
@@ -156,12 +238,11 @@ server <- function(input, output, session) {
  
   observeEvent(input$Button_generate_heatmap, ignoreInit = T, ignoreNULL = T, {
 
-     #saveRDS(hot_to_r(input$Table_compounds_settings), "Table_compounds_settings.rds")
-     #saveRDS(hot_to_r(input$Table_samples_settings), "Table_samples_settings.rds")
-     
-    #Table_compounds_settings <- readRDS("Table_compounds_settings.rds")
-    #Table_samples_settings <- readRDS("Table_samples_settings.rds")
-    
+    # saveRDS(hot_to_r(input$Table_compounds_settings), "Table_compounds_settings.rds")
+    # saveRDS(hot_to_r(input$Table_samples_settings), "Table_samples_settings.rds")
+    #  
+    # Table_compounds_settings <- readRDS("Table_compounds_settings.rds")
+    # Table_samples_settings <- readRDS("Table_samples_settings.rds")
     
     ## 3.1 Get concentration selection information from Table_compounds_settings =======================================
     compounds_dil <- hot_to_r(input$Table_compounds_settings) %>%
@@ -197,7 +278,7 @@ server <- function(input, output, session) {
       rvalues$df_normalized <- rvalues$df_input %>%
         filter(is.na(itsd)) %>%
         inner_join(rvalues$df_conc_type, by=c("compound_name", "conc")) %>%
-        inner_join(rvalues$df_itsd_stats, by=c("sampleid", "letter")) %>%
+        inner_join(rvalues$df_itsd_samples, by=c("sampleid", "letter")) %>%
         mutate(norm_peak = peakarea / avg) %>% 
         mutate(norm_peak = ifelse(peakarea < zero_threshold, NA, norm_peak)) %>% 
         mutate(norm_peak = ifelse(is.infinite(norm_peak), 0, norm_peak))
@@ -206,7 +287,7 @@ server <- function(input, output, session) {
       rvalues$df_normalized <- rvalues$df_input %>%
         filter(is.na(itsd)) %>%
         inner_join(rvalues$df_conc_type, by=c("compound_name", "conc")) %>%
-        inner_join(rvalues$df_itsd_stats, by="sampleid") %>%
+        inner_join(rvalues$df_itsd_samples, by="sampleid") %>%
         mutate(norm_peak = peakarea / avg) %>% 
         mutate(norm_peak = ifelse(peakarea < zero_threshold, NA, norm_peak)) %>% 
         mutate(norm_peak = ifelse(is.infinite(norm_peak), 0, norm_peak))
@@ -290,7 +371,7 @@ server <- function(input, output, session) {
     
 
     
-    heatmap_width <- nrow(rvalues$df_samples)*0.6
+    heatmap_width <- nrow(rvalues$df_samples)*0.7
     
 
     output$Plot_heatmap <- renderPlot({
@@ -304,35 +385,23 @@ server <- function(input, output, session) {
                                  border_gp = gpar(col = "black", lty = 1),
                                  rect_gp = gpar(col = "black", lwd = 0.2),
                                  row_dend_side = "right",
-                                 row_dend_width = unit(10, "cm"),
-                                 column_dend_height = unit(4, "cm"),
+                                 #row_dend_width = unit(10, "cm"),
+                                 #column_dend_height = unit(4, "cm"),
+                                 row_title_gp = gpar(fontsize = 8, fontface = "bold"),
+                                 row_title_rot = 0,
                                  row_split = df_row_split$group_compounds,
                                  column_split = df_column_split$group_samples,
-                                 cluster_rows = input$Checkbox_cluster_compounds,
-                                 cluster_columns = input$Checkbox_cluster_samples,
+                                 #cluster_rows = input$Checkbox_cluster_compounds,
+                                 #cluster_columns = input$Checkbox_cluster_samples,
                                  show_heatmap_legend = TRUE)
       
 
+
+      rvalues$lgd1 = Legend(title = "Not Detected", labels = "", at = 1:1, legend_gp = gpar(fill = 8:9), title_position = c("topcenter"))
+      draw(rvalues$lgd1, x = unit(0.7, "npc"), y = unit(0.99, "npc"), just = c("right", "top"))
       draw(rvalues$plot_ht, heatmap_legend_side="top")
       
-      
-      # lgd1 = Legend(col_fun = col_fun1, title = 'Log2FoldChange',
-      #               title_position = 'topcenter',
-      #               legend_height = unit(6, "cm"),
-      #               at = c(-color_lim, 0, color_lim))
-      # 
-      # lgd2 = Legend(title = "Not Detected", labels = "", at = 1:1, legend_gp = gpar(fill = 8:9), title_position = c("topcenter"))
-      # 
-      # pd = packLegend(lgd1, lgd2, direction = "horizontal", column_gap = unit(20, "mm"))
-      # pushViewport(viewport(width = 1, height = 1))
-      # grid.rect(gp = gpar(col = "white"))
-      # 
-      # draw(pd, x = unit(0.9, "npc"), y = unit(0.9, "npc"), just = c("right", "top"))
-      # 
-      # popViewport()
-      
-      
-      
+
 
     }, height=max(nrow(rvalues$mat_normalized)*14.5, 500)
     )
@@ -391,16 +460,102 @@ server <- function(input, output, session) {
   output$Button_download_heatmap <- downloadHandler(
     
     filename = function(){
-      paste0(rvalues$panel, "_Heatmap_",unique(rvalues$df_input$batch),"_",Sys.Date(),".pdf")
+      paste0(rvalues$panel, "_Heatmap_",unique(rvalues$df_input$batch)[1],"_",Sys.Date(),".pdf")
     },
     
     content = function(file) {
-      pdf(file, height = nrow(rvalues$mat_normalized)/2, width = max(ncol(rvalues$mat_normalized)/2, 20))
+      pdf(file, height = nrow(rvalues$mat_normalized)/2, width = max(ncol(rvalues$mat_normalized)/2, 30))
       draw(rvalues$plot_ht, heatmap_legend_side = "top")
+      draw(rvalues$lgd1, x = unit(0.7, "npc"), y = unit(0.99, "npc"), just = c("right", "top"))
       plot.new()
-      print( gridExtra::grid.arrange(gridExtra::tableGrob(rvalues$nd_compounds, rows = NULL)) )
+      if(nrow(rvalues$nd_compounds) > 0)
+      {
+        print( gridExtra::grid.arrange(gridExtra::tableGrob(rvalues$nd_compounds, rows = NULL)) )
+      }
       dev.off()
     })
+  
+  
+  
+  ## 4.6 QC report =====================================================================================================
+  
+  output$Button_download_qc_report <- downloadHandler(
+    
+    filename = function(){
+      paste0(rvalues$panel, "_QC_Report_",unique(rvalues$df_input$batch),"_",Sys.Date(),".pdf")
+    },
+    
+    content = function(file) {
+      
+      plot_itsd <- rvalues$df_itsd %>%
+        ggplot(., aes(x = num, y = peakarea, group = compound_name, label = flag)) +
+        geom_point(aes(color = compound_name, shape = cc_shape), fill = "black", alpha = 0.6, size = 2) +
+        geom_line(aes(y = average, color = compound_name)) +
+        geom_line(aes(y = average + 1.5*stdev, color = compound_name), linetype = "dashed") +
+        geom_line(aes(y = average - 1.5*stdev, color = compound_name), linetype = "dashed") +
+        geom_ribbon(aes(ymin = average - stdev, ymax = average + stdev,
+                        fill = compound_name), alpha=0.2) +
+        ggrepel::geom_label_repel(size = 1.2, max.overlaps = Inf,
+                                  min.segment.length = 0.1, label.padding = 0.1, na.rm=T) +
+        theme_bw()+
+        theme(panel.grid.minor= element_blank(),
+              panel.grid.major.x = element_blank(),
+              legend.text = element_text(color = "black", size = 8),
+              legend.title = element_text(color = "black", size = 10),
+              legend.position = "top",
+              strip.text=element_text(color = "black", size=5),
+              axis.text =element_text(color = "black", size=8),
+              axis.title = element_text(color = "black", size = 10),
+              plot.margin = margin(1,0.5,0,0.6, unit = 'cm')) +
+        scale_fill_manual(values = c(paletteer::paletteer_d("ggsci::default_igv", length(compounds_list)))) +
+        guides(color = guide_legend(title = "Internal Standard Compound",
+                                    override.aes = list(size = 2.5), nrow = 2,
+                                    title.position="top", title.hjust = 0.5,
+                                    label.position = "right"), fill = "none",
+               shape = guide_legend(title = "",
+                                    override.aes = list(size = 2.5), nrow = 2,
+                                    title.position="top", title.hjust = 0.5,
+                                    label.position = "right")) +
+        scale_shape_manual(values = c(24,16))+
+        scale_y_continuous(label = scales::scientific) +
+        scale_x_continuous(breaks = seq(0,150,25)) +
+        ylab("Raw Peak Area\n") +
+        xlab("\nInjection Number")+
+        facet_wrap_paginate(~ compound_name, ncol = 2, nrow = 3) +
+        ggtitle(paste0(rvalues$panel, " Normalized QC Report - ", unique(rvalues$df_input$batch)[1]))
+      
+      
+      
+      
+      
+      pdf(file, onefile=T, height = 11, width = 12)
+
+      for(i in 1:n_pages(plot_itsd))
+      {
+        print(plot_itsd + facet_wrap_paginate(~ compound_name, ncol = 2, nrow = 3, page = i))
+      }
+      
+      temp <- rvalues$df_itsd_stats %>% 
+        dplyr::rename(Batch = batch,
+                      `Internal Standard` = compound_name,
+                      StDev = stdev,
+                      Mean = average,
+                      Median = middle,
+                      CV = cv,
+                      `CV Median` = cv_med) %>%
+        mutate(StDev = round(StDev, digits = 0),
+               Mean = round(Mean, digits = 0),
+               Median = round(Median, digits = 0),
+               `CV (%)` = round(CV * 100, digits = 1),
+               `CV Median (%)` = round(`CV Median` * 100, digits = 1)) %>%
+        select(Batch,`Internal Standard`,StDev,Mean,Median,`CV (%)`,`CV Median (%)`)
+      
+      
+      print( gridExtra::grid.arrange(gridExtra::tableGrob(temp, rows = NULL)) )
+      
+      invisible(dev.off())
+    })
+  
   
   
 }
