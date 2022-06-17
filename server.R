@@ -116,7 +116,7 @@ server <- function(input, output, session) {
     
     
     ## 1.4 List of compounds ===========================================================================================
-    compounds_list <- rvalues$df_compounds %>% 
+    rvalues$compounds_list <- rvalues$df_compounds %>% 
       distinct(compound_name) %>%
       `$`(compound_name)
     
@@ -507,7 +507,7 @@ server <- function(input, output, session) {
               axis.text =element_text(color = "black", size=8),
               axis.title = element_text(color = "black", size = 10),
               plot.margin = margin(1,0.5,0,0.6, unit = 'cm')) +
-        scale_fill_manual(values = c(paletteer::paletteer_d("ggsci::default_igv", length(compounds_list)))) +
+        scale_fill_manual(values = c(paletteer::paletteer_d("ggsci::default_igv", length(rvalues$compounds_list)))) +
         guides(color = guide_legend(title = "Internal Standard Compound",
                                     override.aes = list(size = 2.5), nrow = 2,
                                     title.position="top", title.hjust = 0.5,
