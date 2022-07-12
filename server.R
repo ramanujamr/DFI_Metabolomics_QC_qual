@@ -54,13 +54,13 @@ server <- function(input, output, session) {
       grepl("TMS", input$filename, ignore.case = T) ~ "TMS",
       TRUE ~ "NOT IDENTIFIED... CHECK FILENAME")
     
-    zero_threshold <- ifelse(rvalues$panel=="Tryptophan", 100, 1000)
+    rvalues$zero_threshold <- ifelse(rvalues$panel=="Tryptophan", 100, 1000)
 
     # Read and clean input data
     if (rvalues$panel == "BileAcids") {
-    rvalues$df_input <- Function_readin_csv_1(filename, zero_threshold)
+    rvalues$df_input <- Function_readin_csv_1(filename, rvalues$zero_threshold)
     } else {
-      rvalues$df_input <- Function_readin_csv_2(filename, zero_threshold)
+      rvalues$df_input <- Function_readin_csv_2(filename, rvalues$zero_threshold)
     }
   
     
@@ -131,7 +131,7 @@ server <- function(input, output, session) {
     rvalues$df_itsd_stats <- rvalues$df_input %>%
       filter(itsd=="ITSD") %>%
       filter(!grepl("MB|Pooled|Plasma|CC|Standard",sampleid, ignore.case = T)) %>% 
-      mutate(peakarea = ifelse(peakarea <= zero_threshold, 0, peakarea)) %>% 
+      mutate(peakarea = ifelse(peakarea <= rvalues$zero_threshold, 0, peakarea)) %>% 
       group_by(batch, compound_name) %>%
       summarise(stdev = sd(peakarea),
                 average = mean(peakarea),
@@ -142,7 +142,7 @@ server <- function(input, output, session) {
     rvalues$df_itsd <- rvalues$df_input %>% 
       filter(itsd == "ITSD") %>% 
       filter(!grepl("MB|Pooled|Plasma|Standard|Spiked",sampleid, ignore.case = T)) %>% 
-      mutate(peakarea = ifelse(peakarea <= zero_threshold, 0, peakarea),
+      mutate(peakarea = ifelse(peakarea <= rvalues$zero_threshold, 0, peakarea),
              num = str_extract(sampleid, "[0-9][0-9][0-9]"),
              num = as.numeric(num),
              cc_shape = ifelse(grepl("CC[0-9]+", sampleid), "CC Sample", "ITSD")) %>% 
@@ -282,7 +282,7 @@ server <- function(input, output, session) {
         inner_join(rvalues$df_conc_type, by=c("compound_name", "conc")) %>%
         inner_join(rvalues$df_itsd_samples, by=c("sampleid", "letter")) %>%
         mutate(norm_peak = peakarea / avg) %>% 
-        mutate(norm_peak = ifelse(peakarea < zero_threshold, NA, norm_peak)) %>% 
+        mutate(norm_peak = ifelse(peakarea < rvalues$zero_threshold, NA, norm_peak)) %>% 
         mutate(norm_peak = ifelse(is.infinite(norm_peak), 0, norm_peak))
     } else {
       
@@ -291,7 +291,7 @@ server <- function(input, output, session) {
         inner_join(rvalues$df_conc_type, by=c("compound_name", "conc")) %>%
         inner_join(rvalues$df_itsd_samples, by="sampleid") %>%
         mutate(norm_peak = peakarea / avg) %>% 
-        mutate(norm_peak = ifelse(peakarea < zero_threshold, NA, norm_peak)) %>% 
+        mutate(norm_peak = ifelse(peakarea < rvalues$zero_threshold, NA, norm_peak)) %>% 
         mutate(norm_peak = ifelse(is.infinite(norm_peak), 0, norm_peak))
     }
     
