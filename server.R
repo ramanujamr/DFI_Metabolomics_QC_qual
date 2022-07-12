@@ -387,14 +387,14 @@ server <- function(input, output, session) {
                                  border_gp = gpar(col = "black", lty = 1),
                                  rect_gp = gpar(col = "black", lwd = 0.2),
                                  row_dend_side = "right",
-                                 #row_dend_width = unit(10, "cm"),
-                                 #column_dend_height = unit(4, "cm"),
+                                 row_dend_width = unit(10, "cm"),
+                                 column_dend_height = unit(4, "cm"),
                                  row_title_gp = gpar(fontsize = 8, fontface = "bold"),
                                  row_title_rot = 0,
                                  row_split = df_row_split$group_compounds,
                                  column_split = df_column_split$group_samples,
-                                 #cluster_rows = input$Checkbox_cluster_compounds,
-                                 #cluster_columns = input$Checkbox_cluster_samples,
+                                 cluster_rows = input$Checkbox_cluster_compounds,
+                                 cluster_columns = input$Checkbox_cluster_samples,
                                  show_heatmap_legend = TRUE)
       
 
