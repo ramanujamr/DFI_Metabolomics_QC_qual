@@ -13,7 +13,7 @@ server <- function(input, output, session) {
   # Refresh csv files list
   observeEvent(input$Button_refresh_csv, ignoreInit = T, ignoreNULL = T, {
     updateSelectInput(session, 'filename', choices = rev(list.files(wddir, 
-                                                                    pattern = ".*bile.*csv|.*PFBBr.*csv|.*Indole.*csv|.*Tryptophan.*csv", 
+                                                                    pattern = ".*bile.*csv|.*PFBBr.*csv|.*Indole.*csv|.*Tryptophan.*csv"|".*TMS.*csv", 
                                                                     ignore.case = T)))
   })
   
@@ -54,6 +54,12 @@ server <- function(input, output, session) {
       grepl("TMS", input$filename, ignore.case = T) ~ "TMS",
       TRUE ~ "NOT IDENTIFIED... CHECK FILENAME")
     
+    if(panel=="Tryptophan"){
+      zero_threshold=100
+    }else{
+        zero_threshold=1000
+      }
+
     # Read and clean input data
     if (rvalues$panel == "BileAcids") {
     rvalues$df_input <- Function_readin_csv_1(filename, zero_threshold)
@@ -425,7 +431,7 @@ server <- function(input, output, session) {
     content = function(file) {
       
       rvalues$df_normalized %>% 
-        select(sampleid, compound_name, norm_peak) %>% 
+        dplyr::select(sampleid, compound_name, norm_peak) %>% 
         mutate(sampleid = ifelse(grepl("MB|Pooled|Plasma|CC|Standard|Spiked", sampleid, ignore.case = T),
                                  sampleid,
                                  gsub("^[0-9]{3}_", "", sampleid))) %>% 

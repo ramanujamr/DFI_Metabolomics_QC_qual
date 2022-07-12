@@ -25,8 +25,8 @@ options(dplyr.summarise.inform = FALSE)
 
 # 0. Initializations ###################################################################################################
 
-zero_threshold=1000
-bile_categories <- c("Primary", "Secondary", "Primary Conjugated", "Secondary Conjugated", "Primary Rodent", "ITSD")
+
+bile_categories <- c("Primary", "Secondary", "Primary Conjugated", "Secondary Conjugated", "Murine", "ITSD")
 
 
 # 1. set up directory and files ########################################################################################
