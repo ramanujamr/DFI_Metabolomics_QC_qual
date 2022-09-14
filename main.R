@@ -86,7 +86,7 @@ Function_readin_csv_2 <- function(filename, zero_threshold, recursive=F){
   
   df_input <- df_input_raw %>% 
     select(-Sample, -garbage,-Type,-Level,-Acq.Date.Time, -Data.File) %>% 
-    slice(-1) %>% 
+    dplyr::slice(-1) %>% 
     reshape2::melt(id.vars="sampleid") %>% 
     mutate(value = as.numeric(value)) %>% 
     replace_na(list(value = 0)) %>% 

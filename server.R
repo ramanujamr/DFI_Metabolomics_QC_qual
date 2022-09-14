@@ -72,15 +72,35 @@ server <- function(input, output, session) {
         group_by(sampleid, letter) %>%
         summarize(avg = mean(peakarea),
                   med = median(peakarea))
-    } else {  # For non bile acids panel
+    } else if(rvalues$panel == "TMS") {  # For TMS
       
       rvalues$df_itsd_samples <- rvalues$df_input %>%
         filter(itsd=="ITSD") %>%
         group_by(sampleid) %>%
         summarize(avg = mean(peakarea),
                   med = median(peakarea))
+    } else(rvalues$panel == "PFBBr") {
+      
+    rvalues$df_itsd_samples <- rvalues$df_input %>%
+      filter(itsd == "ITSD") %>%
+      filter(compound_name == "phenol" | compound_name == "proline_d7") %>% 
+      group_by(sampleid, conc) %>%
+      summarize(avg = mean(peakarea),
+                med = median(peakarea))
+    
+    } else(rvalues$panel == "Tryptophan") {
+      
+      rvalues$df_itsd_samples <- rvalues$df_input %>%
+        filter(itsd == "ITSD") %>%
+        filter(compound_name == "serotonin" | compound_name == "melatonin") %>% 
+        group_by(sampleid, conc) %>%
+        summarize(avg = mean(peakarea),
+                  med = median(peakarea))
+      
     }
+    
 
+  
     
 
     
@@ -242,7 +262,7 @@ server <- function(input, output, session) {
 
     # saveRDS(hot_to_r(input$Table_compounds_settings), "Table_compounds_settings.rds")
     # saveRDS(hot_to_r(input$Table_samples_settings), "Table_samples_settings.rds")
-    #  
+      
     # Table_compounds_settings <- readRDS("Table_compounds_settings.rds")
     # Table_samples_settings <- readRDS("Table_samples_settings.rds")
     
@@ -289,7 +309,7 @@ server <- function(input, output, session) {
       rvalues$df_normalized <- rvalues$df_input %>%
         filter(is.na(itsd)) %>%
         inner_join(rvalues$df_conc_type, by=c("compound_name", "conc")) %>%
-        inner_join(rvalues$df_itsd_samples, by="sampleid") %>%
+        inner_join(rvalues$df_itsd_samples) %>%
         mutate(norm_peak = peakarea / avg) %>% 
         mutate(norm_peak = ifelse(peakarea < rvalues$zero_threshold, NA, norm_peak)) %>% 
         mutate(norm_peak = ifelse(is.infinite(norm_peak), 0, norm_peak))
@@ -311,9 +331,9 @@ server <- function(input, output, session) {
     
     
     # df_normalized <- df_normalized %>%
-    #   left_join(df_MB_mean, by="compound_name") %>%
+    #   left_join(rvalues$df_MB_mean, by="compound_name") %>%
     #   rowwise() %>%
-    #   mutate(norm_peak = max(norm_peak-mean_mb,0)) %>% 
+    #   mutate(norm_peak = max(norm_peak-mean_mb,0)) %>%
     #   mutate(norm_peak = ifelse(norm_peak==0, NA, norm_peak))
     
     
