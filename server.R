@@ -81,12 +81,23 @@ server <- function(input, output, session) {
                   med = median(peakarea))
     } else if(rvalues$panel == "PFBBr") {
       
-    rvalues$df_itsd_samples <- rvalues$df_input %>%
-      filter(itsd == "ITSD") %>%
-      filter(compound_name == "phenol" | compound_name == "proline_d7") %>% 
-      group_by(sampleid, conc) %>%
-      summarize(avg = mean(peakarea),
-                med = median(peakarea))
+      temp1 <- rvalues$df_input %>%
+        filter(itsd == "ITSD") %>%
+        filter(compound_name == "phenol" | compound_name == "proline_d7") %>% 
+        filter(conc == "concentrated") %>% 
+        group_by(sampleid, conc) %>%
+        summarize(avg = mean(peakarea),
+                  med = median(peakarea))
+      
+      temp2 <- rvalues$df_input %>%
+        filter(itsd == "ITSD") %>%
+        filter(compound_name == "valerate" | compound_name == "valine_d8") %>% 
+        filter(conc == "diluted") %>% 
+        group_by(sampleid, conc) %>%
+        summarize(avg = mean(peakarea),
+                  med = median(peakarea))
+      
+      rvalues$df_itsd_samples = rbind(temp1, temp2)
     
     } else if(rvalues$panel == "Tryptophan") {
       
@@ -98,9 +109,6 @@ server <- function(input, output, session) {
                   med = median(peakarea))
       
     }
-    
-
-  
     
 
     
@@ -141,12 +149,9 @@ server <- function(input, output, session) {
     rvalues$compounds_list <- rvalues$df_compounds %>% 
       distinct(compound_name) %>%
       `$`(compound_name)
-    
-    
-    
+
     
     ## 1.2 ITSD Stat by compound (for QC)  =============================================================================
-    
     
     rvalues$df_itsd_stats <- rvalues$df_input %>%
       filter(itsd=="ITSD") %>%
