@@ -92,7 +92,7 @@ server <- function(input, output, session) {
       
       rvalues$df_itsd_samples <- rvalues$df_input %>%
         filter(itsd == "ITSD") %>%
-        filter(compound_name == "serotonin" | compound_name == "melatonin") %>% 
+        filter(grepl("serotonin|melatonin", compound_name)) %>% 
         group_by(sampleid, conc) %>%
         summarize(avg = mean(peakarea),
                   med = median(peakarea))
