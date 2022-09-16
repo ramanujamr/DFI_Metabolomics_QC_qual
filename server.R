@@ -79,7 +79,7 @@ server <- function(input, output, session) {
         group_by(sampleid) %>%
         summarize(avg = mean(peakarea),
                   med = median(peakarea))
-    } else(rvalues$panel == "PFBBr") {
+    } else if(rvalues$panel == "PFBBr") {
       
     rvalues$df_itsd_samples <- rvalues$df_input %>%
       filter(itsd == "ITSD") %>%
@@ -88,7 +88,7 @@ server <- function(input, output, session) {
       summarize(avg = mean(peakarea),
                 med = median(peakarea))
     
-    } else(rvalues$panel == "Tryptophan") {
+    } else if(rvalues$panel == "Tryptophan") {
       
       rvalues$df_itsd_samples <- rvalues$df_input %>%
         filter(itsd == "ITSD") %>%
