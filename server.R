@@ -491,7 +491,9 @@ server <- function(input, output, session) {
     },
     
     content = function(file) {
-      pdf(file, height = nrow(rvalues$mat_normalized)/2, width = max(ncol(rvalues$mat_normalized)/2, 30))
+      
+      pdf(file, height = max(nrow(rvalues$mat_normalized)/2,6), width = max(ncol(rvalues$mat_normalized)/2, 30))
+      par(mar=c(0,0,0,0))
       draw(rvalues$plot_ht, heatmap_legend_side = "top")
       draw(rvalues$lgd1, x = unit(0.7, "npc"), y = unit(0.99, "npc"), just = c("right", "top"))
       plot.new()
