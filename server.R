@@ -398,7 +398,7 @@ server <- function(input, output, session) {
     
 
     
-    heatmap_width <- nrow(rvalues$df_samples)*0.7
+    heatmap_width <- min(nrow(rvalues$df_samples)*0.7, 50)
     
 
     output$Plot_heatmap <- renderPlot({
@@ -461,7 +461,6 @@ server <- function(input, output, session) {
     })
   
   
-  
   # Save normalized csv (no QCs)
   output$Button_download_normalized_csv_no_qc <- downloadHandler(
     
@@ -492,7 +491,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      pdf(file, height = max(nrow(rvalues$mat_normalized)/2,6), width = max(ncol(rvalues$mat_normalized)/2, 30))
+      pdf(file, height = max(nrow(rvalues$mat_normalized)/2,6), width = min(max(ncol(rvalues$mat_normalized)/2, 30), 40))
       par(mar=c(0,0,0,0))
       draw(rvalues$plot_ht, heatmap_legend_side = "top")
       draw(rvalues$lgd1, x = unit(0.7, "npc"), y = unit(0.99, "npc"), just = c("right", "top"))
