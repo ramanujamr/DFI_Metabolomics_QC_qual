@@ -7,20 +7,20 @@ Taurocholic acid,Primary Conjugated
 Isodeoxycholic acid,Secondary
 Alloisolithocholic acid,Secondary
 3-Oxolithocholic acid,Secondary
-Tauro-Alpha or Tauro-Beta Muricholic acid,Murine
+Tauro-Alpha or Tauro-Beta muricholic acid,Murine
 Glycodehydrocholic acid,Secondary Conjugated
 Glycochenodeoxycholic acid,Primary Conjugated
 Glycodeoxycholic acid,Secondary Conjugated
 Glycoursodeoxycholic acid,Secondary Conjugated
 Glycolithocholic acid,Secondary Conjugated
 Glycohyodeoxycholic acid,Secondary Conjugated
-Omega-Muricholic acid,Murine
-Beta-Muricholic acid,Murine
-Gamma-Muricholic acid,Murine
-Alpha-Muricholic acid,Murine
-Allocholic acid,Secondary
+Omega-muricholic or 3-Epicholic acid ,Murine
+Beta-muricholic acid,Murine
+Gamma-muricholic acid,Murine
+Alpha-muricholic acid,Murine
+Allocholic acid,Primary
 Chenodeoxycholic acid,Primary
-Allolithocholic acid,Primary
+Allolithocholic acid,Secondary
 Ursodeoxycholic acid,Secondary
 Hyodeoxycholic acid,Secondary
 3-Deoxycholic acid,Secondary
@@ -29,7 +29,7 @@ Isolithocholic acid,Secondary
 7-Oxodeoxycholic acid,Secondary
 3-Oxocholic acid,Secondary
 3-Oxodeoxycholic acid or 3-Oxochenodeoxycholic acid,Secondary
-7-Oxo or 6-Oxo lithocholic acid,Secondary
+7-Oxo or 6-Oxolithocholic acid,Secondary
 12-Oxolithocholic acid,Secondary
 Taurodeoxycholic acid,Secondary Conjugated
 Taurolithocholic acid,Secondary Conjugated
@@ -38,6 +38,7 @@ Tauroursodeoxycholic acid,Secondary Conjugated
 Taurohyodeoxycholic acid,Secondary Conjugated
 7-12-Dioxolithocholic acid,Secondary
 Ursocholic acid,Secondary
+Beta-hyodeoxycholic acid,Secondary
 D4-Cholic acid,ITSD
 D4-Chenodeoxycholic acid,ITSD
 D4-Deoxycholic acid,ITSD
