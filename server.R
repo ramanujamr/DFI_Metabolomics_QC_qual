@@ -141,8 +141,7 @@ server <- function(input, output, session) {
       rvalues$df_compounds <- rvalues$df_compounds %>% 
         select(-group_compounds) %>% 
         left_join(bile_acids_groups, by="compound_name") %>% 
-        mutate(group_compounds = replace_na(group_compounds, "1")) %>% 
-        mutate(group_compounds = factor(group_compounds, levels=compounds_categories, ordered = T))
+        mutate(group_compounds = replace_na(group_compounds, "1"))
         
     }
     

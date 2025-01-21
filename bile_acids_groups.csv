@@ -1,81 +1,81 @@
 compound_name,group_compounds
-D4-Cholic acid,ITSD
-D4-Chenodeoxycholic acid,ITSD
-D4-Deoxycholic acid,ITSD
-D4-Glycocholic acid,ITSD
-D4-Glycochenodeoxycholic acid,ITSD
-D4-Glycodeoxycholic acid,ITSD
-D4-Lithocholic acid,ITSD
-D4-Taurocholic acid,ITSD
-D4-Taurochenodeoxycholic acid,ITSD
-D4-Taurodeoxycholic acid,ITSD
-D5-Alpha-Muricholic acid,ITSD
-cholic acid,primary
-deoxycholic acid,secondary
-lithocholic acid,secondary
-glycocholic acid,primary conjugated
-taurocholic acid,primary conjugated
-isodeoxycholic acid,secondary
-alloisolithocholic acid,secondary
-3-oxolithocholic acid,secondary
-tauro-alpha muricholic acid*,murine
-tauro-beta muricholic acid*,murine
-glycodehydrocholic acid,secondary conjugated
-glycochenodeoxycholic acid,primary conjugated
-glycodeoxycholic acid,secondary conjugated
-glycoursodeoxycholic acid,secondary conjugated
-glycolithocholic acid,secondary conjugated
-glycohyodeoxycholic acid,secondary conjugated
-omega-muricholic acid*,murine
-3-epicholic acid*,secondary
-beta-muricholic acid,murine
-gamma-muricholic acid,murine
-alpha-muricholic acid,murine
-allocholic acid,secondary
-chenodeoxycholic acid,primary
-allolithocholic acid,secondary
-ursodeoxycholic acid,secondary
-hyodeoxycholic acid,secondary
-3-deoxycholic acid,secondary
-isolithocholic acid,secondary
+12-beta-hydroxyisocholic acid,secondary
+12-epideoxycholic acid,secondary
 12-oxochenodeoxycholic acid,secondary
-7-oxodeoxycholic acid,secondary
-3-oxocholic acid,secondary
-3-oxodeoxycholic acid*,secondary
-3-oxochenodeoxycholic acid*,secondary
-7-oxolithocholic acid*,secondary
-6-oxolithocholic acid*,secondary
 12-oxolithocholic acid,secondary
-taurodeoxycholic acid,secondary conjugated
-taurolithocholic acid,secondary conjugated
-taurochenodeoxycholic acid,primary conjugated
-tauroursodeoxycholic acid,secondary conjugated
-taurohyodeoxycholic acid,secondary conjugated
+3-12-dioxo-5beta-cholanoic acid,secondary
+3-7-dioxo-5beta-cholanoic acid,secondary
+3-deoxycholic acid,secondary
+3-epicholic acid,secondary
+3-oxochenodeoxycholic acid,secondary
+3-oxocholic acid,secondary
+3-oxodeoxycholic acid,secondary
+3-oxolithocholic acid,secondary
+6-oxolithocholic acid,secondary
 7-12-dioxolithocholic acid,secondary
-ursocholic acid*,secondary
+7-oxodeoxycholic acid,secondary
+7-oxolithocholic acid,secondary
+allocholic acid,secondary
+alloisolithocholic acid,secondary
+allolithocholic acid,secondary
+alpha-muricholic acid,murine
 beta-hyodeoxycholic acid,secondary
-isoursodeoxycholic acid*,secondary
-murideoxycholic acid*,murine
+beta-muricholic acid,murine
+chenodeoxycholic acid,primary
+chenodeoxycholic acid-3-sulfate,sulfated
+chenodeoxycholic acid-7-sulfate,sulfated
+cholenic acid,secondary
+cholic acid,primary
 cholic acid-3-sulfate,sulfated
 cholic acid-7-sulfate,sulfated
-deoxycholic acid-3-sulfate*,sulfated
-chenodeoxycholic acid-7-sulfate*,sulfated
-chenodeoxycholic acid-3-sulfate,sulfated
-lithocholic acid-3-sulfate,sulfated
-taurocholic acid-3-sulfate,sulfated
-glyco-beta muricholic acid,murine
-glyco-omega muricholic acid,murine
-glyco-gamma muricholic acid,murine
-cholenic acid,secondary
-isochenodeoxycholic acid,secondary
-glycolithocholic acid-3-sulfate,sulfated
-12-beta-hydroxyisocholic acid*,secondary
-12-epideoxycholic acid,secondary
+D4-Chenodeoxycholic acid,ITSD
+D4-Cholic acid,ITSD
+D4-Deoxycholic acid,ITSD
+D4-Glycochenodeoxycholic acid,ITSD
+D4-Glycocholic acid,ITSD
+D4-Glycodeoxycholic acid,ITSD
+D4-Lithocholic acid,ITSD
+D4-Taurochenodeoxycholic acid,ITSD
+D4-Taurocholic acid,ITSD
+D4-Taurodeoxycholic acid,ITSD
+D5-Alpha-Muricholic acid,ITSD
 dehydrocholic acid,secondary
-3-7-dioxo-5beta-cholanoic acid,secondary
-3-12-dioxo-5beta-cholanoic acid,secondary
+deoxycholic acid,secondary
+deoxycholic acid-3-sulfate,sulfated
+gamma-muricholic acid,murine
+glyco-beta muricholic acid,murine
+glyco-gamma muricholic acid,murine
+glyco-omega muricholic acid,murine
+glycochenodeoxycholic acid,primary conjugated
 glycochenodeoxycholic acid-3-sulfate,sulfated
+glycocholic acid,primary conjugated
+glycodehydrocholic acid,secondary conjugated
+glycodeoxycholic acid,secondary conjugated
 glycodeoxycholic acid-3-sulfate,sulfated
-ursodeoxycholic acid-3-sulfate,sulfated
+glycohyodeoxycholic acid,secondary conjugated
+glycolithocholic acid,secondary conjugated
+glycolithocholic acid-3-sulfate,sulfated
+glycoursodeoxycholic acid,secondary conjugated
+hyodeoxycholic acid,secondary
+isochenodeoxycholic acid,secondary
+isodeoxycholic acid,secondary
+isolithocholic acid,secondary
+isoursodeoxycholic acid,secondary
+lithocholic acid,secondary
+lithocholic acid-3-sulfate,sulfated
+murideoxycholic acid,murine
+omega-muricholic acid,murine
+tauro-alpha muricholic acid,murine
+tauro-beta muricholic acid,murine
 tauro-gamma-muricholic acid,murine
 tauro-omega-muricholic acid,murine
+taurochenodeoxycholic acid,primary conjugated
+taurocholic acid,primary conjugated
+taurocholic acid-3-sulfate,sulfated
+taurodeoxycholic acid,secondary conjugated
+taurohyodeoxycholic acid,secondary conjugated
+taurolithocholic acid,secondary conjugated
+tauroursodeoxycholic acid,secondary conjugated
+ursocholic acid,secondary
+ursodeoxycholic acid,secondary
+ursodeoxycholic acid-3-sulfate,sulfated
